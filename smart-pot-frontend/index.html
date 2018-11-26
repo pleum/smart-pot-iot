@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>SMART POT</title>
+    <link
+      href="https://fonts.googleapis.com/css?family=Roboto"
+      rel="stylesheet"
+    />
+
+    <style>
+      body {
+        font-family: 'Roboto', sans-serif;
+        transition: background-color 700ms cubic-bezier(0.645, 0.045, 0.355, 1);
+      }
+
+      .light {
+        background: white;
+        color: black;
+      }
+
+      .dark {
+        background: black;
+        color: white;
+      }
+
+      .container {
+        text-align: center;
+      }
+
+      .soil {
+        text-transform: uppercase;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>SMART POT</h1>
+      <div class="soil">Soil [ <span id="value">Loading...</span> ]</div>
+    </div>
+
+    <script src="https://cdn.netpie.io/microgear.js"></script>
+    <script>
+      const APPID = 'APPID'
+      const APPKEY = 'APPKEY'
+      const APPSECRET = 'APPSECRET'
+      const ALIAS = 'ALIAS'
+
+      const lightDOM = document.querySelector('.light>#value')
+      const soilDOM = document.querySelector('.soil>#value')
+      const bodyDOM = document.querySelector('body')
+
+      let deviceOnline = false
+
+      const microgear = Microgear.create({
+        key: APPKEY,
+        secret: APPSECRET,
+        alias: ALIAS
+      })
+
+      microgear.on('connected', () => {
+        microgear.setAlias(ALIAS)
+        microgear.subscribe('/sensor/light')
+        microgear.subscribe('/sensor/soil')
+      })
+
+      microgear.on('message', (topic, msg) => handleOnMessage(topic, msg))
+      microgear.on('present', event => handleOnPresent(event))
+
+      function handleOnMessage(topic, message) {
+        if (topic === '/SmartPot/sensor/light') {
+          if (message == '0') {
+            bodyDOM.classList.remove('dark')
+            bodyDOM.classList.add('light')
+          } else {
+            bodyDOM.classList.remove('light')
+            bodyDOM.classList.add('dark')
+          }
+        } else if (topic === '/SmartPot/sensor/soil') {
+          soilDOM.innerHTML = message == '0' ? 'Humid' : 'Dry'
+        }
+      }
+
+      function handleOnPresent(event) {
+        const { type, alias } = event
+        if (alias != 'esp8266') return
+        if (type != 'online') {
+          deviceOnline = true
+        } else {
+          deviceOnline = false
+        }
+      }
+
+      microgear.connect(APPID)
+    </script>
+  </body>
+</html>
